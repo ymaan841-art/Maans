@@ -15,71 +15,51 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-
-      # 1. Download repository
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      # 2. Setup Java
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: "21"
 
-      # 3. Setup Android SDK
       - name: Install Android SDK
         run: |
           export PATH="$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH"
-
           yes | sdkmanager --sdk_root="$ANDROID_HOME" --licenses
+          sdkmanager --sdk_root="$ANDROID_HOME" "platforms;android-36" "build-tools;36.0.0"
 
-          sdkmanager --sdk_root="$ANDROID_HOME" \
-            "platform-tools" \
-            "platforms;android-36.1" \
-            "build-tools;36.0.0"
-
-      # 4. Setup Gradle
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: "9.3.1"
 
-      # 5. Extract Android Project
-            - name: Configure Firebase
-        run: |
-          PROJECT_DIR="$(dirname "$(find project -name settings.gradle.kts -print -quit)")"
-
-          mkdir -p "$PROJECT_DIR/app"
-
-          cp google-services.json "$PROJECT_DIR/app/google-services.json"
-
-          echo "Firebase configuration added successfully"
       - name: Extract Project
         run: |
           unzip -q Maanmy-app-with-apk-workflow.zip -d project
+          echo "Project extracted"
 
-          echo "Project extracted successfully"
-
-          find project -name settings.gradle.kts
-
-      # 6. Build APK
-      - name: Build APK
+      - name: Configure Firebase
         run: |
-          PROJECT_DIR="$(dirname "$(find project -name settings.gradle.kts -print -quit)")"
+          PROJECT_DIR=$(dirname "$(find project -name settings.gradle.kts -print -quit)")
 
           if [ -z "$PROJECT_DIR" ]; then
-            echo "ERROR: Android project not found"
+            echo "Android project not found"
             exit 1
           fi
 
-          echo "Building from: $PROJECT_DIR"
+          mkdir -p "$PROJECT_DIR/app"
+          cp google-services.json "$PROJECT_DIR/app/google-services.json"
 
+          echo "Firebase configured"
+
+      - name: Build APK
+        run: |
+          PROJECT_DIR=$(dirname "$(find project -name settings.gradle.kts -print -quit)")
           cd "$PROJECT_DIR"
-
           gradle --no-daemon assembleDebug
 
-      # 7. Upload APK
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
