@@ -46,6 +46,15 @@ jobs:
           gradle-version: "9.3.1"
 
       # 5. Extract Android Project
+            - name: Configure Firebase
+        run: |
+          PROJECT_DIR="$(dirname "$(find project -name settings.gradle.kts -print -quit)")"
+
+          mkdir -p "$PROJECT_DIR/app"
+
+          cp google-services.json "$PROJECT_DIR/app/google-services.json"
+
+          echo "Firebase configuration added successfully"
       - name: Extract Project
         run: |
           unzip -q Maanmy-app-with-apk-workflow.zip -d project
